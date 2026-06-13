@@ -1,197 +1,131 @@
-// // API for Chat
-// import Chat from '../models/chat.js'
+import Chat from "../models/chat.js";
+import User from "../models/user.js";
 
-// export const createChat =async(req, res)=>{
-//     try {
-//         const userId = req.user._id
-//         const chatData = {
-//             userId,
-//             message:[],
-//             name:'New Chat',
-//             userName:req.user.name
-//         }
-//         await Chat.create(chatData)
-//         res.json({success:true, 
-//                 message:"Chat Created"
-//         })
-//     } catch (error) {
-//         res.json({
-//             success:false,
-//             message:error.message
-//         });
-//     }
-// }
+// ================= SEND MESSAGE (Text & Image) =================
+import { textMessageController } from './messageController.js';
+import { imageMessageController } from './messageController.js';
 
 
+export const sendMessage = async (req, res) => {
+  const { mode } = req.params;
 
-// // API Get All chats 
+  console.log(`[sendMessage] Mode received: ${mode}`);
 
-
-// export const getChats =async(req, res)=>{
-//     try {
-//         const userId = req.user._id
-//         const chats = await Chat.find({userId}).sort({updateAt:-1})
-        
-//         res.json({success:true, chats})
-       
-//     } catch (error) {
-//         res.json({
-//             success:false,
-//             message:error.message
-//         });
-//     }
-// }
-
-
-
-// // API Delete chats
-
-// export const deleteChats = async(req, res)=>{
-//     try {
-//         const userId = req.user._id;
-//         const {chatId} = req.body;
-//         await Chat.deleteOne({_id:chatId, userId});
-//         res.json({success:true, message:"Chat Deleted"});
-       
-//     } catch (error) {
-//         res.json({
-//             success:false,
-//             message:error.message
-//         });
-//     }
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import Chat from '../models/chat.js'
-
-// CREATE CHAT
-export const createChat = async (req, res) => {
   try {
-
-    const userId = req.user._id;
-
-    const chatData = {
-      userId,
-      messages: [],
-      name: 'New Chat',
-      userName: req.user.name
-    };
-
-    const newChat = await Chat.create(chatData);
-
-    res.json({
-      success: true,
-      message: "Chat Created",
-      chat: newChat
-    });
-
+    if (mode === 'text') {
+      return await textMessageController(req, res);
+    } 
+    else if (mode === 'image') {
+      return await imageMessageController(req, res);
+    } 
+    else {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid mode: ${mode}. Use 'text' or 'image'`
+      });
+    }
   } catch (error) {
-
-    res.json({
+    console.error(`[sendMessage Error] Mode: ${mode}`, error);
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: "Internal server error in sendMessage",
+      error: error.message
     });
-
   }
 };
 
+// ================= CHAT MANAGEMENT =================
 
-// GET ALL CHATS
-export const getChats = async (req, res) => {
-
+export const createChat = async (req, res) => {
   try {
+    const userId = req.user?._id;
 
-    const userId = req.user._id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
 
-    const chats = await Chat.find({ userId }).sort({ updatedAt: -1 });
+    const { title = "New Chat" } = req.body;
+
+    const newChat = await Chat.create({
+      userId,
+      title,
+      messages: []
+    });
+
+    res.json({
+      success: true,
+      chat: newChat
+    });
+  } catch (error) {
+    console.error("Create Chat Error:", error);
+    
+    // Better error response
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create chat",
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+export const getChats = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+
+    const chats = await Chat.find({ userId })
+      .sort({ updatedAt: -1 })
+      .select('title updatedAt');
 
     res.json({
       success: true,
       chats
     });
-
   } catch (error) {
-
-    res.json({
+    console.error("Get Chats Error:", error);
+    res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };
 
-
-// DELETE CHAT
 export const deleteChats = async (req, res) => {
-
   try {
-
-    const userId = req.user._id;
-
+    const userId = req.user?._id;
     const { chatId } = req.body;
 
-    await Chat.deleteOne({
-      _id: chatId,
-      userId
-    });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    if (!chatId) {
+      return res.status(400).json({ success: false, message: "chatId is required" });
+    }
+
+    const deleted = await Chat.findOneAndDelete({ _id: chatId, userId });
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Chat not found" });
+    }
 
     res.json({
       success: true,
-      message: "Chat Deleted"
+      message: "Chat deleted successfully"
     });
-
   } catch (error) {
-
-    res.json({
+    console.error("Delete Chat Error:", error);
+    res.status(500).json({
       success: false,
       message: error.message
     });
-
   }
-
 };

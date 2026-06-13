@@ -4,7 +4,6 @@ import imageKit from "../configs/imageKit.js";
 import axios from "axios";
 import openai from "../configs/openai.js";
 
-// ================= TEXT MESSAGE CONTROLLER =================
 
 export const textMessageController = async (req, res) => {
   try {
@@ -42,23 +41,23 @@ export const textMessageController = async (req, res) => {
       isImage: false,
     }); 
 
-    // AI Response
-   const {choices} = await openai.chat.completions.create({
-    model: "gemini-3.5-flash",
+
+// AI Response
+const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",   
     messages: [
-        {   role: "system",
+        { 
+            role: "system",
             content: "You are a helpful assistant." 
         },
         { 
-            // role: "user",
-            // content: "Explain to me how AI works",
-             role: "user",
-             content: prompt,
+            role: "user",
+            content: prompt,
         },
     ],
 }); 
 
-    // Assistant reply
+const { choices } = completion;
     const rply = {
       ...choices[0].message,
       timestamp: Date.now(),

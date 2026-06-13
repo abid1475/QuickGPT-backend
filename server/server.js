@@ -12,24 +12,26 @@ import { stripeWebhooks } from './controllers/webhook.js';
 const app = express();
 
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
 
-// Database connection
 connectDB();
 
-//  Stripe Webhook
 app.post('/api/stripe', express.raw({type:'application/json'}),stripeWebhooks)
 
 
 
-// Port
 const PORT = process.env.PORT || 3000;
 
 
-// Routes
+
+
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  next();
+});
+
 app.get('/', (req, res) => res.send("Server is live"));
 
 app.use('/api/user', userRoute);
@@ -39,7 +41,6 @@ app.use('/api/credit', creditRoute);
 
 
 
-// Server
 app.listen(PORT, () => {
     console.log(`Server is Running on port ${PORT}`);
 });

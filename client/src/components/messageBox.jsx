@@ -1,53 +1,97 @@
-import React, { useEffect } from 'react'
-import { assets } from '../assets/assets'
-import moment from 'moment'
-import MarkDown from 'react-markdown'
-import Prism from 'prismjs'
+import React, { useEffect } from 'react';
+import { assets } from '../assets/assets';
+import moment from 'moment';
+import Markdown from 'react-markdown';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-tomorrow.css'; // Better dark theme for code
+import axios from 'axios';
 
-const messageBox = ({message}) => {
-  useEffect(()=>{
-   Prism.highlightAll()
-  },[message.content])
+const MessageBox = ({ message }) => {
+  // Highlight code blocks when message changes
+  useEffect(() => {
+    Prism.highlightAll();
+  }, [message.content]);
+
+  // Remove unused function or implement properly if needed
+  // const replyContent = async (e) => { ... };
+
+  const isUser = message.role === 'user';
+
   return (
-    <div>
-      {
-        message.role === "user"?(
-          <div className='flex items-start justify-end my-4 gap-2'>
-            <div className='flex flex-col gap-2 p-2 px-4 bg-slate-50 dark:bg-[#57317C]/30 border border-[#80609F]/30 rounded-md max-w-2xl'>
-              <p className='text-sm dark:text-primary'>{message.content}</p>
-              <span className='text-sx text-gray-400 dark:text-[#B1A6C0]'>{message.timestamp}</span>
-              <img src={assets.user_icon} alt="" className='w-8 rounded-full' />
-</div>
-
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} group my-6 px-4`}>
+      <div className={`flex gap-4 max-w-[85%] ${isUser ? 'flex-row-reverse' : ''}`}>
+        {/* Avatar */}
+        {!isUser && (
+          <div className="flex-shrink-0 pt-1">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center ring-2 ring-white dark:ring-[#1f1b2e]">
+              <img 
+                src={assets.logo_full || assets.bot_icon} 
+                alt="AI" 
+                className="w-5 h-5" 
+              />
+            </div>
           </div>
-        )
-        :
-        (
-          <div className='inline-flex flex-col gap-2 p-2 px-4 max-w-2xl bg-primary/20 dark:bg-[#57317C]/30 border border-[#80609F]/30 rounded-md my-4'>
+        )}
 
-  {message.isImage ? (
+        {/* Message Bubble */}
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+          <div
+            className={`relative px-5 py-3.5 rounded-3xl text-[15px] leading-relaxed
+              ${isUser 
+                ? 'bg-gradient-to-r from-[#A456F7] to-[#3D81F6] text-white rounded-br-none' 
+                : 'bg-white dark:bg-[#2A2438] border border-[#80609F]/20 dark:border-[#80609F]/40 rounded-bl-none shadow-sm'
+              }`}
+          >
+            {message.isImage ? (
+              <img
+                src={message.content}
+                alt="Generated image"
+                className="max-w-md rounded-2xl shadow-md"
+              />
+            ) : (
+              <div className="prose prose-sm dark:prose-invert max-w-none reset-tw">
+                <Markdown
+                  components={{
+                    code({ node, inline, className, children, ...props }) {
+                      return !inline ? (
+                        <pre className="rounded-2xl !bg-[#1e1b2e] p-4 overflow-x-auto">
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        </pre>
+                      ) : (
+                        <code className="bg-black/20 px-1.5 py-0.5 rounded" {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {message.content}
+                </Markdown>
+              </div>
+            )}
+          </div>
 
-    <img
-      src={message.content}
-      alt=""
-      className='w-full max-w-md mt-2 rounded-md'
-    />
+          {/* Timestamp */}
+          <span className="text-[10px] text-gray-400 dark:text-[#B1A6C0] mt-1.5 px-2">
+            {moment(message.timestamp || message.createdAt).fromNow()}
+          </span>
+        </div>
 
-  ) : (
-
-    <div className='text-sm dark:text-primary reset-tw'>
-     <MarkDown>{message.content}</MarkDown> 
+        {/* User Avatar (Right Side) */}
+        {isUser && (
+          <div className="flex-shrink-0 pt-1">
+            <img
+              src={assets.user_icon}
+              alt="You"
+              className="w-8 h-8 rounded-2xl object-cover ring-2 ring-white dark:ring-[#1f1b2e]"
+            />
+          </div>
+        )}
+      </div>
     </div>
+  );
+};
 
-  )}
-
-  <span className='text-xs text-gray-400 dark:text-[#B1A6C0]'>{moment(message.content).fromNow()}</span>
-
-</div>
-        )
-      }
-    </div>
-  )
-}
-
-// export default messageBox
+export default MessageBox;

@@ -18,8 +18,11 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
-    "openai": "^6.39.0"
+    "openai": "^6.39.0",
+    "stripe": "^22.2.0",
+    "webhook": "^0.0.2"
   }
 }
